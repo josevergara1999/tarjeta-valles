@@ -1,0 +1,37 @@
+# Entorno y secretos — el repo es PÚBLICO, nada de esto entra jamás
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencias y build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# Editor y sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
