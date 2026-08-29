@@ -36,7 +36,10 @@ insert into public.users (id, telefono, nombre) values
 do $$
 declare n int;
 begin
-  select count(*) into n from public.merchant_secrets;
+  select count(*) into n from public.merchant_secrets
+  where merchant_id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+                        'cccccccc-cccc-cccc-cccc-cccccccccccc');
   if n <> 3 then
     raise exception 'FALLA: se esperaban 3 secretos autocreados y hay %', n;
   end if;
@@ -104,9 +107,14 @@ do $$
 declare n int;
 begin
   -- Ve la red activa, no la cerrada.
-  select count(*) into n from public.merchants;
+  -- Filtrado a los tres comercios de esta prueba: desde la 002 la base trae además los 8 de la
+  -- semilla, y contar la tabla entera mediría el seed en vez del aislamiento.
+  select count(*) into n from public.merchants
+  where id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+               'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+               'cccccccc-cccc-cccc-cccc-cccccccccccc');
   if n <> 2 then
-    raise exception 'FALLA: el usuario ve % comercios; deberían ser los 2 activos', n;
+    raise exception 'FALLA: el usuario ve % comercios de prueba; deberían ser los 2 activos', n;
   end if;
   raise notice 'OK  · el usuario ve la red activa y no el comercio apagado';
 

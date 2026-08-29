@@ -10,9 +10,10 @@ Valle Las Trancas, Región de Ñuble.
 
 ## Estado
 
-Hito 1 — Núcleo de canje, en curso. Terminadas T0 (andamiaje) y T1 (migración 001: `settings`,
-`users`, `merchants`, `merchant_users`, con RLS y sus pruebas). Siguiente: T2, el catálogo de
-beneficios.
+Hito 1 — Núcleo de canje, en curso. Terminadas T0 (andamiaje), T1 (migración 001: `settings`,
+`users`, `merchants`, `merchant_users`) y T2 (migración 002: `benefits`, `benefit_rules` y los 8
+comercios de prueba). Las dos migraciones traen RLS y sus pruebas negativas. Siguiente: T3, los
+giros y los canjes.
 
 ## Documentación
 

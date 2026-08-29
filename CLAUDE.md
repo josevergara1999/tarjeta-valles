@@ -73,9 +73,18 @@ npm run preview    # previsualizar build
         `cooldown_dias` y `hmac_secret`. Seed de los parámetros de `seed-data.md`.
         _El `hmac_secret` quedó en tabla propia (`merchant_secrets`), no como columna de `merchants`:
         RLS filtra filas, no columnas. Pruebas en `supabase/tests/001_rls.sql`._
-  - [ ] T2 — Migración 002: `benefits`, `benefit_rules` + RLS + seed de los 8 comercios.
+  - [x] T2 — Migración 002: `benefits`, `benefit_rules` + RLS + seed de los 8 comercios.
         Índice único parcial: un solo beneficio activo por comercio. Horarios con `hora_fin < hora_inicio`
-        y ventana nula = todo el día.
+        y ventana nula = todo el día. Pruebas en `supabase/tests/002_rls.sql`.
+        _Decisiones tomadas al implementar:_
+        · `condicion_consumo` quedó **nullable**: el spec la pide obligatoria pero `seed-data.md` trae
+          tres beneficios sin condición (#3, #5, #7) y exige que la UI maneje el campo vacío. Se
+          prohíbe la cadena vacía, que es lo que rompería la regla dura 4. **Pendiente de confirmar.**
+        · `dias_semana` usa 0=domingo … 6=sábado, la convención de `extract(dow)`. T4 depende de esto.
+        · Un trigger crea la fila de `benefit_rules` con cada beneficio, para que el 1:1 sea real y T4
+          no tenga que inventar valores por defecto. Mismo patrón que `merchant_secrets` en la 001.
+        · Los 8 comercios semilla llevan ids fijos `5eed0000-…`; se barren con un solo `delete`
+          cuando entren comercios reales.
   - [ ] T3 — Migración 003: `entitlements`, `redemptions` + RLS. Índice único parcial en `codigo`
         mientras `estado='pendiente'`, `motivo_anulacion`, `anulado_por`, un solo entitlement
         `bienvenida` por usuario. Carga de los 5 usuarios semilla.
