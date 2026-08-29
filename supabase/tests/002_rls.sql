@@ -30,8 +30,10 @@ insert into public.merchant_users (merchant_id, auth_user_id, email, rol) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'dueno@fogon.test',  'dueno'),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222', 'dueno@nevado.test', 'dueno');
 
+-- Los teléfonos de esta prueba son de un rango propio (+569000000xx): los de seed-data.md ya
+-- están ocupados por los 5 usuarios semilla y `users.telefono` es único.
 insert into public.users (id, telefono, nombre) values
-  ('33333333-3333-3333-3333-333333333333', '+56911111111', 'Turista');
+  ('33333333-3333-3333-3333-333333333333', '+56900000001', 'Turista');
 
 insert into public.benefits (id, merchant_id, tipo, titulo, condicion_consumo, activo) values
   ('deadbee1-0000-4000-a000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'cortesia',  'Postre de prueba',   'con plato principal', true),

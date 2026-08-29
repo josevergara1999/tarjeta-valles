@@ -88,9 +88,25 @@ npm run preview    # previsualizar build
           no tenga que inventar valores por defecto. Mismo patrón que `merchant_secrets` en la 001.
         · Los 8 comercios semilla llevan ids fijos `5eed0000-…`; se barren con un solo `delete`
           cuando entren comercios reales.
-  - [ ] T3 — Migración de `entitlements`, `redemptions` + RLS. Índice único parcial en `codigo`
-        mientras `estado='pendiente'`, `motivo_anulacion`, `anulado_por`, un solo entitlement
-        `bienvenida` por usuario. Carga de los 5 usuarios semilla.
+  - [x] T3 — Migraciones 005 a 007: `entitlements`, `redemptions` + RLS. Índice único parcial en
+        `codigo` mientras `estado='pendiente'`, `motivo_anulacion`, `anulado_por`, un solo entitlement
+        `bienvenida` por usuario. Los 5 usuarios semilla cargados. Pruebas en `supabase/tests/005_rls.sql`.
+        _Decisiones tomadas al implementar:_
+        · **Ninguna escritura del flujo de canje se abre por la API.** Crear, cancelar y validar serán
+          funciones SECURITY DEFINER (T5, T6): la reserva necesita transacción con lock y eso no cabe
+          en un `WITH CHECK`. Por RLS solo escribe el admin (T12, anulaciones).
+        · Dos foráneas compuestas cierran incoherencias que el código podría cometer: el beneficio
+          canjeado **tiene** que ser del comercio del canje (escenario 9), y el giro gastado **tiene**
+          que ser del usuario que canjea. La base lo impide, no la confianza en T5.
+        · `redemptions_un_pendiente_por_usuario` es más estricto que la decisión 2: un pendiente ya
+          vencido pero sin marcar también bloquea. **T5 debe barrer los vencidos antes de insertar.**
+        · Sin `order_id` ni `giftcard_id` en `entitlements`: esas tablas son de hitos posteriores y una
+          columna uuid sin foránea es una referencia rota esperando turno.
+        · **Pendiente de producto:** cuántos giros trae cada pase no está definido en ninguna parte.
+          Solo están fijados suscripción (8/10, en `settings`) y pase 14 días = 12. Los `giros_totales`
+          de la semilla (pase_7 = 8, pase_3 = 4) son **relleno de prueba**, no decisión de producto.
+        · Los usuarios semilla se escriben directo en `auth.users`: **no pueden iniciar sesión**, no
+          tienen credencial. Sirven para probar T4-T6. Los de verdad los crea el OTP en T7.
 
   _El corazón, en el backend_
   - [ ] T4 — `get_available_benefits`: las 5 condiciones, única fuente de verdad. `America/Santiago`,

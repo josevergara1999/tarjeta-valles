@@ -10,10 +10,10 @@ Valle Las Trancas, Región de Ñuble.
 
 ## Estado
 
-Hito 1 — Núcleo de canje, en curso. Terminadas T0 (andamiaje), T1 (migración 001: `settings`,
-`users`, `merchants`, `merchant_users`) y T2 (migración 002: `benefits`, `benefit_rules` y los 8
-comercios de prueba). Las dos migraciones traen RLS y sus pruebas negativas. Siguiente: T3, los
-giros y los canjes.
+Hito 1 — Núcleo de canje, en curso. El modelo de datos completo del hito está puesto y probado:
+comercios y cuentas de local (T1), beneficios con sus cupos y horarios (T2), y giros y canjes (T3),
+todo con RLS y con sus pruebas. Siguiente: T4, la función que decide qué casillas ve un usuario —
+el corazón del sistema.
 
 ## Documentación
 
@@ -57,6 +57,7 @@ y se pueden repetir:
 supabase db query --linked -f supabase/tests/001_rls.sql
 supabase db query --linked -f supabase/tests/002_rls.sql
 supabase db query --linked -f supabase/tests/004_updated_at.sql
+supabase db query --linked -f supabase/tests/005_rls.sql
 ```
 
 Si no imprime ningún error, el aislamiento se cumple. Que un comercio no vea los datos de otro se
