@@ -87,6 +87,7 @@ No uno por local escaneado. Se registra en el `entitlement` de tipo `bienvenida`
 | Estado `anulado` | Anulación manual desde el panel admin (soporte: canje mal validado, reclamo del usuario). **Devuelve el giro** y no cuenta para progreso ni para cupos. Requiere `motivo` y `anulado_por`. |
 | Pase 14 días = 12 giros | **Intencional.** Mantiene la curva de precio por giro descendente y evita que el pase largo compita con la suscripción mensual. |
 | Unicidad de `redemptions.codigo` | Índice único parcial: único mientras `estado = 'pendiente'`. Los códigos históricos pueden repetirse. |
+| Condición de consumo vacía | **La condición es obligatoria, siempre** (29-ago-2026). El spec ya lo pedía y la regla dura 4 también; esta tabla tenía tres beneficios con la casilla en blanco y eso era el error. Un beneficio que no impone nada lo dice: `Sin condiciones`. La columna es `NOT NULL` y rechaza la cadena vacía. |
 | Ubicación de archivos | Correcto: mover `spec-app-tarjeta.md`, `contexto-producto.md` y `seed-data.md` a `/docs`. `CLAUDE.md` va en la raíz. |
 
 ---
@@ -100,3 +101,6 @@ No uno por local escaneado. Se registra en el `entitlement` de tipo `bienvenida`
 5. Nueva tabla `settings`.
 6. `redemptions` gana `motivo_anulacion` y `anulado_por`; índice único parcial en `codigo`.
 7. `benefits`: constraint que impide más de un beneficio `activo = true` por `merchant_id`.
+8. `benefits.condicion_consumo` es `NOT NULL` y no admite cadena en blanco.
+9. `benefit_rules` es 1:1 de verdad: un trigger la crea junto con el beneficio, para que T4 no tenga
+   que inventarse valores por defecto y la regla no viva en dos lugares.

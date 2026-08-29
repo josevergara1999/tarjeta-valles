@@ -68,6 +68,9 @@ npm run preview    # previsualizar build
   _Base_
   - [x] T0 — Andamiaje: repo, Vite + React + Tailwind, PWA, estructura, cliente Supabase
         Publicado en https://github.com/josevergara1999/tarjeta-valles (público, rama `main`).
+        _Pendiente y es DISEÑO, no se inventa: el manifiesto va con `icons: []`, y sin iconos de
+        192 y 512 px Android no ofrece instalar. La PWA no es instalable todavía. El favicon sigue
+        siendo el de la plantilla de Vite._
   - [x] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS.
         `users.id` referencia `auth.users`; `merchant_users.auth_user_id` también; `merchants` con
         `cooldown_dias` y `hmac_secret`. Seed de los parámetros de `seed-data.md`.
@@ -77,15 +80,15 @@ npm run preview    # previsualizar build
         Índice único parcial: un solo beneficio activo por comercio. Horarios con `hora_fin < hora_inicio`
         y ventana nula = todo el día. Pruebas en `supabase/tests/002_rls.sql`.
         _Decisiones tomadas al implementar:_
-        · `condicion_consumo` quedó **nullable**: el spec la pide obligatoria pero `seed-data.md` trae
-          tres beneficios sin condición (#3, #5, #7) y exige que la UI maneje el campo vacío. Se
-          prohíbe la cadena vacía, que es lo que rompería la regla dura 4. **Pendiente de confirmar.**
+        · `condicion_consumo` es **obligatoria** (`NOT NULL`, sin cadena vacía). La 002 la dejó nullable
+          siguiendo a `seed-data.md`; la **migración 003** lo corrigió a favor del spec y de la regla
+          dura 4. Un beneficio que no impone nada declara `Sin condiciones`.
         · `dias_semana` usa 0=domingo … 6=sábado, la convención de `extract(dow)`. T4 depende de esto.
         · Un trigger crea la fila de `benefit_rules` con cada beneficio, para que el 1:1 sea real y T4
           no tenga que inventar valores por defecto. Mismo patrón que `merchant_secrets` en la 001.
         · Los 8 comercios semilla llevan ids fijos `5eed0000-…`; se barren con un solo `delete`
           cuando entren comercios reales.
-  - [ ] T3 — Migración 003: `entitlements`, `redemptions` + RLS. Índice único parcial en `codigo`
+  - [ ] T3 — Migración de `entitlements`, `redemptions` + RLS. Índice único parcial en `codigo`
         mientras `estado='pendiente'`, `motivo_anulacion`, `anulado_por`, un solo entitlement
         `bienvenida` por usuario. Carga de los 5 usuarios semilla.
 

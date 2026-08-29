@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import UserApp from './app-user/UserApp'
 import MerchantApp from './app-merchant/MerchantApp'
 import AdminApp from './app-admin/AdminApp'
@@ -7,10 +7,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/*" element={<UserApp />} />
+        {/* React Router ordena por especificidad, no por orden de escritura: /comercio/* y
+            /admin/* ganan sobre el comodín, que se queda con todo lo demás. */}
         <Route path="/comercio/*" element={<MerchantApp />} />
         <Route path="/admin/*" element={<AdminApp />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/*" element={<UserApp />} />
       </Routes>
     </BrowserRouter>
   )

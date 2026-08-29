@@ -12,17 +12,18 @@ Datos ficticios pero realistas para poblar la base en desarrollo. Los nombres so
 |---|---|---|---|---|---|---|---|---|
 | 1 | Fogón del Valle | restaurante | Postre de cortesía | con plato principal | cortesía | 6 | Lun-Jue | 12:00–16:00 |
 | 2 | Cervecería Nevado | cerveceria | Schop de cortesía | con la segunda ronda | cortesía | 10 | Mar-Dom | 17:00–21:00 |
-| 3 | Café Bosque | restaurante | 15% en la cuenta | — | descuento | sin tope | Todos | 08:00–13:00 |
+| 3 | Café Bosque | restaurante | 15% en la cuenta | Sin condiciones | descuento | sin tope | Todos | 08:00–13:00 |
 | 4 | Rental Trancas | rental | 15% en el arriendo | arriendo de día completo | descuento | 8 | Todos | 08:00–12:00 |
 | 5 | Minimarket El Paso | minimarket | 10% en la compra | compras sobre $15.000 | descuento | sin tope | Todos | 09:00–21:00 |
 | 6 | Cabañas Mirador | hospedaje | Late checkout 14:00 | sujeto a disponibilidad | cortesía | 2 | Todos | — |
-| 7 | Termas del Sur | otro | 20% en la entrada | — | descuento | 15 | Lun-Vie | 10:00–18:00 |
-| 8 | Gimnasio Andino | gimnasio | Clase grupal incluida | — | cortesía | 4 | Lun-Vie | 07:00–20:00 |
+| 7 | Termas del Sur | otro | 20% en la entrada | Sin condiciones | descuento | 15 | Lun-Vie | 10:00–18:00 |
+| 8 | Gimnasio Andino | gimnasio | Clase grupal incluida | Sin condiciones | cortesía | 4 | Lun-Vie | 07:00–20:00 |
 
 Casos que estos datos permiten probar:
 - Cupos con tope vs sin tope (#3 y #5 sin tope)
 - Ventanas horarias distintas y beneficios fuera de horario
-- Beneficio sin condición de consumo (#3, #5, #7) — la UI debe manejar el campo vacío
+- Beneficio que no impone nada (#3, #7, #8): lo **declara** con "Sin condiciones". La condición
+  nunca llega vacía a la pantalla, porque la columna es `NOT NULL` desde la migración 003
 - Hospedaje sin ventana horaria (#6)
 - Cupos muy bajos que se agotan rápido (#6, con 2)
 

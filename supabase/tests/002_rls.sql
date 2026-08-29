@@ -35,9 +35,9 @@ insert into public.users (id, telefono, nombre) values
 
 insert into public.benefits (id, merchant_id, tipo, titulo, condicion_consumo, activo) values
   ('deadbee1-0000-4000-a000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'cortesia',  'Postre de prueba',   'con plato principal', true),
-  ('deadbee1-0000-4000-a000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'descuento', 'Beneficio apagado',  null,                  false),
+  ('deadbee1-0000-4000-a000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'descuento', 'Beneficio apagado',  'Sin condiciones',      false),
   ('deadbee1-0000-4000-a000-000000000003', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'cortesia',  'Schop de prueba',    'con la segunda ronda', true),
-  ('deadbee1-0000-4000-a000-000000000004', 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'descuento', 'De un local cerrado', null,                  true);
+  ('deadbee1-0000-4000-a000-000000000004', 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'descuento', 'De un local cerrado', 'Sin condiciones',      true);
 
 -- ---------------------------------------------------------------------------
 -- La semilla de la 002 quedó cargada y es coherente
@@ -75,11 +75,19 @@ begin
     raise exception 'FALLA: se esperaba 1 beneficio semilla sin ventana horaria y hay %', n;
   end if;
 
+  -- Ninguno se queda en blanco: los que no imponen nada lo declaran (migración 003).
+  select count(*) into n
+  from public.benefits
+  where id::text like '5eedbe11-%' and condicion_consumo = 'Sin condiciones';
+  if n <> 3 then
+    raise exception 'FALLA: se esperaban 3 beneficios semilla que declaran "Sin condiciones" y hay %', n;
+  end if;
+
   select count(*) into n
   from public.benefits
   where id::text like '5eedbe11-%' and condicion_consumo is null;
-  if n <> 3 then
-    raise exception 'FALLA: se esperaban 3 beneficios semilla sin condición de consumo y hay %', n;
+  if n <> 0 then
+    raise exception 'FALLA: % beneficios semilla quedaron sin condición de consumo', n;
   end if;
 
   raise notice 'OK  · la semilla de los 8 comercios está completa y coherente';
@@ -104,16 +112,16 @@ begin
 
   -- Decisión 4: dos activos en el mismo comercio, nunca.
   begin
-    insert into public.benefits (merchant_id, tipo, titulo)
-    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'descuento', 'Segundo activo');
+    insert into public.benefits (merchant_id, tipo, titulo, condicion_consumo)
+    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'descuento', 'Segundo activo', 'Sin condiciones');
     raise exception 'FALLA: un comercio quedó con dos beneficios activos';
   exception when unique_violation then
     raise notice 'OK  · un solo beneficio activo por comercio';
   end;
 
   -- Pero apagados puede tener los que quiera: el histórico no estorba.
-  insert into public.benefits (merchant_id, tipo, titulo, activo)
-  values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'descuento', 'Otro apagado', false);
+  insert into public.benefits (merchant_id, tipo, titulo, condicion_consumo, activo)
+  values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'descuento', 'Otro apagado', 'Sin condiciones', false);
   raise notice 'OK  · varios beneficios apagados por comercio sí se permiten';
 
   -- Media ventana no significa nada.
@@ -179,7 +187,16 @@ begin
     values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'cortesia', 'Con condición en blanco', '   ', false);
     raise exception 'FALLA: se aceptó una condición de consumo en blanco';
   exception when check_violation then
-    raise notice 'OK  · la condición de consumo es nula o dice algo, nunca cadena vacía';
+    raise notice 'OK  · la condición de consumo nunca es una cadena vacía';
+  end;
+
+  -- Y desde la 003 tampoco puede faltar: el spec y la regla dura 4 la piden siempre.
+  begin
+    insert into public.benefits (merchant_id, tipo, titulo, condicion_consumo, activo)
+    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'cortesia', 'Sin condición ninguna', null, false);
+    raise exception 'FALLA: se aceptó un beneficio sin condición de consumo';
+  exception when not_null_violation then
+    raise notice 'OK  · la condición de consumo es obligatoria';
   end;
 end $$;
 
@@ -239,8 +256,8 @@ begin
 
   -- Colgarle un beneficio a otro local sí es un error, y tiene que serlo.
   begin
-    insert into public.benefits (merchant_id, tipo, titulo, activo)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'descuento', 'Regalo envenenado', false);
+    insert into public.benefits (merchant_id, tipo, titulo, condicion_consumo, activo)
+    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'descuento', 'Regalo envenenado', 'Sin condiciones', false);
     raise exception 'FALLA: Fogón creó un beneficio a nombre de Nevado';
   exception when insufficient_privilege then
     raise notice 'OK  · Fogón no puede crear beneficios a nombre de otro';
@@ -314,8 +331,8 @@ begin
   raise notice 'OK  · el usuario no edita beneficios ni cupos';
 
   begin
-    insert into public.benefits (merchant_id, tipo, titulo, activo)
-    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'cortesia', 'Beneficio inventado', false);
+    insert into public.benefits (merchant_id, tipo, titulo, condicion_consumo, activo)
+    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'cortesia', 'Beneficio inventado', 'Sin condiciones', false);
     raise exception 'FALLA: un usuario final creó un beneficio';
   exception when insufficient_privilege then
     raise notice 'OK  · un usuario final no puede crear beneficios';

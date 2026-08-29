@@ -49,12 +49,14 @@ supabase db push --linked          # aplicar migraciones pendientes
 supabase db advisors --linked      # revisar avisos de seguridad y rendimiento
 ```
 
-Cada migración trae su script de pruebas negativas de RLS en `supabase/tests/`. Crean sus propios
-datos, comprueban lo que **no** se debe poder leer y terminan en `rollback`, así que no ensucian la
-base y se pueden repetir:
+Cada migración trae su script de pruebas en `supabase/tests/`. Crean sus propios datos, comprueban
+lo que **no** se debe poder leer ni escribir, y terminan en `rollback`, así que no ensucian la base
+y se pueden repetir:
 
 ```bash
 supabase db query --linked -f supabase/tests/001_rls.sql
+supabase db query --linked -f supabase/tests/002_rls.sql
+supabase db query --linked -f supabase/tests/004_updated_at.sql
 ```
 
 Si no imprime ningún error, el aislamiento se cumple. Que un comercio no vea los datos de otro se
