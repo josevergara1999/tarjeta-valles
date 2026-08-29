@@ -67,7 +67,7 @@ npm run preview    # previsualizar build
 
   _Base_
   - [x] T0 — Andamiaje: repo, Vite + React + Tailwind, PWA, estructura, cliente Supabase
-        _(commiteado en local; **falta publicar el repo en GitHub**)_
+        Publicado en https://github.com/josevergara1999/tarjeta-valles (público, rama `main`).
   - [x] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS.
         `users.id` referencia `auth.users`; `merchant_users.auth_user_id` también; `merchants` con
         `cooldown_dias` y `hmac_secret`. Seed de los parámetros de `seed-data.md`.
