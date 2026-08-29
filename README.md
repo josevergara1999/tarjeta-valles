@@ -37,6 +37,26 @@ npm run build     # build de producción
 npm run preview   # previsualizar el build
 ```
 
+## Base de datos
+
+El esquema está versionado en `supabase/migrations/` y se aplica con el CLI:
+
+```bash
+supabase db push --linked          # aplicar migraciones pendientes
+supabase db advisors --linked      # revisar avisos de seguridad y rendimiento
+```
+
+Cada migración trae su script de pruebas negativas de RLS en `supabase/tests/`. Crean sus propios
+datos, comprueban lo que **no** se debe poder leer y terminan en `rollback`, así que no ensucian la
+base y se pueden repetir:
+
+```bash
+supabase db query --linked -f supabase/tests/001_rls.sql
+```
+
+Si no imprime ningún error, el aislamiento se cumple. Que un comercio no vea los datos de otro se
+prueba, no se asume.
+
 ## Estructura
 
 ```

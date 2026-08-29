@@ -68,9 +68,11 @@ npm run preview    # previsualizar build
   _Base_
   - [x] T0 — Andamiaje: repo, Vite + React + Tailwind, PWA, estructura, cliente Supabase
         _(commiteado en local; **falta publicar el repo en GitHub**)_
-  - [ ] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS.
+  - [x] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS.
         `users.id` referencia `auth.users`; `merchant_users.auth_user_id` también; `merchants` con
         `cooldown_dias` y `hmac_secret`. Seed de los parámetros de `seed-data.md`.
+        _El `hmac_secret` quedó en tabla propia (`merchant_secrets`), no como columna de `merchants`:
+        RLS filtra filas, no columnas. Pruebas en `supabase/tests/001_rls.sql`._
   - [ ] T2 — Migración 002: `benefits`, `benefit_rules` + RLS + seed de los 8 comercios.
         Índice único parcial: un solo beneficio activo por comercio. Horarios con `hora_fin < hora_inicio`
         y ventana nula = todo el día.
