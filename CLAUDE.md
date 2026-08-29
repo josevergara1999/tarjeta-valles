@@ -63,9 +63,46 @@ npm run preview    # previsualizar build
 
 ## Estado actual
 
-- [ ] Hito 1 — Núcleo de canje **(en curso)**
+- [ ] Hito 1 — Núcleo de canje **(en curso)** — 14 tareas, T0 a T13
+
+  _Base_
   - [x] T0 — Andamiaje: repo, Vite + React + Tailwind, PWA, estructura, cliente Supabase
-  - [ ] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS
+        _(commiteado en local; **falta publicar el repo en GitHub**)_
+  - [ ] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS.
+        `users.id` referencia `auth.users`; `merchant_users.auth_user_id` también; `merchants` con
+        `cooldown_dias` y `hmac_secret`. Seed de los parámetros de `seed-data.md`.
+  - [ ] T2 — Migración 002: `benefits`, `benefit_rules` + RLS + seed de los 8 comercios.
+        Índice único parcial: un solo beneficio activo por comercio. Horarios con `hora_fin < hora_inicio`
+        y ventana nula = todo el día.
+  - [ ] T3 — Migración 003: `entitlements`, `redemptions` + RLS. Índice único parcial en `codigo`
+        mientras `estado='pendiente'`, `motivo_anulacion`, `anulado_por`, un solo entitlement
+        `bienvenida` por usuario. Carga de los 5 usuarios semilla.
+
+  _El corazón, en el backend_
+  - [ ] T4 — `get_available_benefits`: las 5 condiciones, única fuente de verdad. `America/Santiago`,
+        ventanas que cruzan medianoche, cupos día y semana (lun-dom) contando validados + pendientes
+        vigentes, cooldown por comercio desde `validado_at`.
+  - [ ] T5 — `create_redemption`: revalida las 5 condiciones dentro de una transacción con lock,
+        rechaza si el usuario ya tiene un pendiente, código de 6 dígitos + payload firmado con HMAC,
+        TTL desde `settings`. Más `cancel_redemption`, que libera el giro al instante.
+  - [ ] T6 — `validate_redemption`: código existente, no expirado, no usado y del comercio autenticado.
+        Marca validado e incrementa `giros_usados`.
+
+  _App del usuario_ (de T7 en adelante hay pantalla: avisar y detenerse hasta que José entregue diseño)
+  - [ ] T7 — Registro por teléfono: OTP internacional, fallback email, rate limit, giro de bienvenida único.
+  - [ ] T8 — **Ruleta.** Consume solo lo que devuelve T4. Beneficio y condición de consumo siempre juntos.
+  - [ ] T9 — Canje activo: código grande, QR firmado, cuenta regresiva, botón de cancelar.
+
+  _Panel del comercio_
+  - [ ] T10 — Login + validar canje (pantalla de entrada por defecto, teclado grande y escáner QR).
+  - [ ] T11 — Mi beneficio + Hoy: editar beneficio, cupos y horarios; canjes del día y cupos restantes.
+
+  _Admin y cierre_
+  - [ ] T12 — Admin mínimo: alta de comercios, carga manual de giros, anulación con motivo obligatorio.
+  - [ ] T13 — Pasada de seguridad: escenarios 1 al 9 de `seed-data.md` + revisión de RLS tabla por tabla
+        con dos cuentas de comercio. **Es la tarea que autoriza mostrar esto a alguien.**
+
+  Toda la regla de negocio vive en T4-T6. Si aparece un cálculo de cupos o cooldown en React, es un error.
 - [ ] Hito 2 — Pagos y productos
 - [ ] Hito 3 — Progreso y tarjetas físicas
 - [ ] Hito 4 — Reportes y giftcards
