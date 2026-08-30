@@ -128,6 +128,35 @@ implementa el techo por franja, que no depende de cuántos giros traiga cada pro
 
 ---
 
+### 12. El pase arranca cuando el local valida — DECIDIDO 30-ago-2026
+
+El spec 3.3 dice que un pase se activa "con el primer canje". **Ese primer canje es la validación del
+comercio, no la elección del usuario.** El reloj de los N días arranca junto con el giro.
+
+Es la regla dura 3 aplicada al pase: si el usuario reserva y se arrepiente, no gastó giro y tampoco
+quemó un día. Un turista que abre la ruleta en el bus para mirar qué hay no puede arrancar su pase de
+3 días sin querer — eso sería perder un tercio del producto por curiosear.
+
+**Por qué no arranca al pagar**, que fue la primera intuición y quedó descartada:
+
+- **Mataría el canal hotelero.** `contexto-producto.md` define al hospedaje como el mejor canal de
+  venta de pases justamente porque alcanza al cliente *semanas antes de llegar*. Un pase vendido con
+  la reserva llegaría vencido al valle.
+- **Mataría la giftcard.** El mismo documento: el código va inactivo hasta la venta, y la giftcard es
+  un regalo. Un pase de 3 días que corre desde el pago se vence en el cajón antes de llegar a su
+  dueño.
+
+Lo que se paga es **el derecho a N días, no los N días siguientes al pago**. Como un pase de esquí:
+te lo venden en agosto y arranca el día que pasas el molinete.
+
+**La suscripción es otra cosa y sí arranca al pagar:** es un ciclo de facturación, no un pase. Un mes
+es un mes desde que te cobran. La activación diferida aplica solo a los pases.
+
+Consecuencia para el código: `create_redemption` **no activa nada**. La activación vive en
+`validate_redemption` (T6), junto con el descuento del giro.
+
+---
+
 ## Menores
 
 | Punto | Decisión |
@@ -138,6 +167,8 @@ implementa el techo por franja, que no depende de cuántos giros traiga cada pro
 | Estado `anulado` | Anulación manual desde el panel admin (soporte: canje mal validado, reclamo del usuario). **Devuelve el giro** y no cuenta para progreso ni para cupos. Requiere `motivo` y `anulado_por`. |
 | Pase 14 días = 12 giros | **Descartado el 30-ago-2026.** Son **42** (14 días × 3 franjas). El argumento original —mantener la curva de precio por giro descendente y que el pase largo no compitiera con la suscripción— se apoyaba en poner los giros por debajo de los días, y la decisión 11 lo dejó sin piso. La tabla de `contexto-producto.md` ya está corregida. Lo que queda abierto es el **precio**, no la cantidad de giros. |
 | Unicidad de `redemptions.codigo` | Índice único parcial: único mientras `estado = 'pendiente'`. Los códigos históricos pueden repetirse. |
+| Qué giro se gasta primero | **El entitlement que expira antes, y los sin fecha al final** (30-ago-2026). Es lo que menos desperdicia: los giros de un pase que vence el domingo se pierden igual, los de la suscripción siguen ahí el lunes. Aparece cuando alguien tiene dos cosas encima —un residente suscrito que compra un pase para el fin de semana con visitas— y la función tiene que elegir una. |
+| Estado de un canje cancelado | **`cancelado`, un valor nuevo del enum** (30-ago-2026), no `expirado`. Los dos liberan el giro igual, así que hoy no cambia nada visible; la diferencia aparece en los reportes del Hito 4, donde mucha cancelación significa que la gente duda al elegir y mucha expiración significa que llegó al local y no la atendieron. Si se guardaran juntos, esa distinción no se puede reconstruir después. |
 | Condición de consumo vacía | **La condición es obligatoria, siempre** (29-ago-2026). El spec ya lo pedía y la regla dura 4 también; esta tabla tenía tres beneficios con la casilla en blanco y eso era el error. Un beneficio que no impone nada lo dice: `Sin condiciones`. La columna es `NOT NULL` y rechaza la cadena vacía. |
 | Ubicación de archivos | Correcto: mover `spec-app-tarjeta.md`, `contexto-producto.md` y `seed-data.md` a `/docs`. `CLAUDE.md` va en la raíz. |
 

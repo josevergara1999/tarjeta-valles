@@ -65,7 +65,7 @@ npm run preview    # previsualizar build
 
 - [ ] Hito 1 — Núcleo de canje **(en curso)** — 14 tareas, T0 a T13
 
-  _Base_ — **las 115 comprobaciones de `supabase/tests/` pasan contra la base real (30-ago-2026).**
+  _Base_ — **las 147 comprobaciones de `supabase/tests/` pasan contra la base real (30-ago-2026).**
   Se corren pegando el archivo en el SQL Editor: cada uno abre transacción y termina en `rollback`,
   así que no dejan nada. El editor no muestra `raise notice`, solo los `raise exception`: si dice
   `Success. No rows returned`, pasaron todas.
@@ -150,9 +150,30 @@ npm run preview    # previsualizar build
         · Las pruebas encontraron un error propio: simulaban un pendiente vencido moviendo solo
           `expira_at` al pasado, y eso choca con `redemptions_expira_despues_de_crearse` de la 005.
           Hay que retroceder también `created_at`. La restricción estaba bien; la prueba, mal.
-  - [ ] T5 — `create_redemption`: revalida las 5 condiciones dentro de una transacción con lock,
+  - [x] T5 — Migraciones 012 y 013: `create_redemption` y `cancel_redemption`. Revalida con lock,
         rechaza si el usuario ya tiene un pendiente, código de 6 dígitos + payload firmado con HMAC,
-        TTL desde `settings`. Más `cancel_redemption`, que libera el giro al instante.
+        TTL desde `settings`. Cancelar libera el giro al instante.
+        **Aplicadas y verificadas el 30-ago-2026**: 25 comprobaciones en `supabase/tests/013_canje.sql`.
+        _Decisiones tomadas al implementar:_
+        · **Las 5 condiciones no se reescriben.** `create_redemption` le pregunta a
+          `get_available_benefits()` si el beneficio sigue en la lista, ya con el lock tomado. Cuesta
+          volver a correr la consulta entera para mirar una fila, y se paga con gusto: el día que
+          cambie cómo se cuentan los cupos, esta función no se entera y sigue siendo correcta. Por eso
+          el rechazo es un genérico `beneficio_no_disponible` y no distingue cupo de horario de
+          cooldown: desglosarlo obligaría a reimplementar los tres predicados acá.
+        · **Errores con `errcode = 'P0001'` y el motivo legible por máquina en DETAIL.** Un SQLSTATE
+          inventado se vería mejor, pero PostgREST manda 500 ante un código que no conoce, y un "sin
+          giros" no es un error del servidor. La pantalla decide con `details`, nunca parseando el
+          mensaje.
+        · **El formato del QR quedó fijado**: `v1.<redemption>.<merchant>.<epoch>.<hmac_sha256_hex>`,
+          firmando los cuatro primeros campos. Con versión al frente para poder cambiarlo sin romper
+          los paneles viejos. T10 lo va a parsear sin conexión.
+        · El código de 6 dígitos sale de `gen_random_bytes`, no de `random()`: un PRNG sembrado se
+          puede predecir observando unos pocos códigos, y adivinarlo permitiría quemarle el canje a
+          otro.
+        · La **012 va sola** porque Postgres no deja usar un valor de enum recién agregado en la misma
+          transacción que lo agregó, y el CLI envuelve cada migración en una.
+        · La 013 usa `create or replace` en las cuatro funciones, así que es reejecutable.
   - [ ] T6 — `validate_redemption`: código existente, no expirado, no usado y del comercio autenticado.
         Marca validado e incrementa `giros_usados`.
 
