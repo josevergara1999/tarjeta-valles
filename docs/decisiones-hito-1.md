@@ -77,6 +77,50 @@ No uno por local escaneado. Se registra en el `entitlement` de tipo `bienvenida`
 
 ---
 
+### 11. Tres giros por día, uno por franja — DECIDIDO 29-ago-2026
+
+El día se divide en **tres franjas: mañana, tarde y noche**, y el usuario tiene **un giro por
+franja**. La promesa del producto es una jornada planificada —arriendo de equipo en la mañana,
+almuerzo, cervecería al cierre del día— y por eso la franja es una **regla que el sistema hace
+cumplir**, no una sugerencia de pantalla: nadie puede quemar los tres giros en el almuerzo.
+
+- Los límites horarios de las franjas viven en `settings`, nunca en el código ni en el cliente.
+- La franja de noche **cruza medianoche**. Un canje a la 01:00 pertenece a la noche del día
+  anterior, exactamente igual que las ventanas horarias de los comercios (decisión 6).
+- El techo aplica **por franja, no por día**: haber gastado la mañana no impide la tarde, y no
+  haber gastado la mañana no regala un giro extra a la noche. La franja perdida se pierde.
+- El total de giros de un pase sale de multiplicar sus días por tres. Un pase de 3 días son
+  9 giros, con un máximo de 3 por día y 1 por franja.
+- Esto convive con el saldo del `entitlement`: la franja es un **techo de ritmo**, no una fuente
+  de giros. Si al usuario le queda un solo giro, la franja no se lo multiplica.
+
+**El modo libre queda disponible para probarlo.** A José le convence también la variante sin
+franjas —tres giros al día y el usuario los gasta cuando quiera— así que el ritmo es un
+parámetro y no una regla tallada en el código:
+
+- `modo_ritmo_giros` en `settings`: `franjas` (el modo activo) o `libre`.
+- En `libre`, el techo es `giros_por_dia` canjes por día operativo y las franjas no se evalúan.
+- **No son dos lógicas duplicadas.** Es una sola bifurcación dentro de `get_available_benefits`,
+  que sigue siendo la única fuente de verdad. Cambiar de modo es un `update` en `settings`, sin
+  migración, sin tocar el cliente y sin desplegar.
+
+**PENDIENTE DE PRODUCTO — no lo resuelve esta decisión.** Triplicar los giros por pase choca
+de frente con dos cosas ya escritas y razonadas:
+
+1. La tabla de precios de `contexto-producto.md` quedó desactualizada. Con tres giros diarios
+   el Pase 7 días sale a ~$376 por beneficio y el de 14 a ~$307, contra **$625 de la suscripción
+   mensual**. El pase largo deja de competir con la suscripción: la deja sin sentido.
+2. La entrada "Pase 14 días = 12 giros" de la tabla de menores decía que ese número era
+   intencional *precisamente* para evitar esa competencia. Con este cambio ese argumento cae.
+
+Puede ser correcto que el pase turístico sea generoso —el turista está tres días y quiere
+exprimirlos, y la suscripción se defiende por otro lado, que es ser para residentes todo el año—
+pero **es una decisión de precio y de salud de la red que hay que tomar aparte**, y al tomarla
+hay que reescribir la tabla de precios y esa entrada. Mientras tanto, T4 solo implementa el
+techo por franja, que no depende de cuántos giros traiga cada producto.
+
+---
+
 ## Menores
 
 | Punto | Decisión |
@@ -85,7 +129,7 @@ No uno por local escaneado. Se registra en el `entitlement` de tipo `bienvenida`
 | TTL de 5 min | Se lee de `settings.ttl_codigo_canje_minutos`. Ningún parámetro de negocio hardcodeado. |
 | Tabla `settings` | Agregarla al modelo de datos: `key`, `value`, `tipo`, `descripcion`. Los valores iniciales están en `seed-data.md`. |
 | Estado `anulado` | Anulación manual desde el panel admin (soporte: canje mal validado, reclamo del usuario). **Devuelve el giro** y no cuenta para progreso ni para cupos. Requiere `motivo` y `anulado_por`. |
-| Pase 14 días = 12 giros | **Intencional.** Mantiene la curva de precio por giro descendente y evita que el pase largo compita con la suscripción mensual. |
+| Pase 14 días = 12 giros | **En revisión desde el 29-ago-2026.** El argumento original era: mantiene la curva de precio por giro descendente y evita que el pase largo compita con la suscripción mensual. La decisión 11 (tres giros por día) lo deja sin piso — ver el pendiente de producto anotado ahí. |
 | Unicidad de `redemptions.codigo` | Índice único parcial: único mientras `estado = 'pendiente'`. Los códigos históricos pueden repetirse. |
 | Condición de consumo vacía | **La condición es obligatoria, siempre** (29-ago-2026). El spec ya lo pedía y la regla dura 4 también; esta tabla tenía tres beneficios con la casilla en blanco y eso era el error. Un beneficio que no impone nada lo dice: `Sin condiciones`. La columna es `NOT NULL` y rechaza la cadena vacía. |
 | Ubicación de archivos | Correcto: mover `spec-app-tarjeta.md`, `contexto-producto.md` y `seed-data.md` a `/docs`. `CLAUDE.md` va en la raíz. |
@@ -104,3 +148,7 @@ No uno por local escaneado. Se registra en el `entitlement` de tipo `bienvenida`
 8. `benefits.condicion_consumo` es `NOT NULL` y no admite cadena en blanco.
 9. `benefit_rules` es 1:1 de verdad: un trigger la crea junto con el beneficio, para que T4 no tenga
    que inventarse valores por defecto y la regla no viva en dos lugares.
+10. `settings` gana los límites horarios de las tres franjas del día (decisión 11), y `redemptions`
+    registra en qué franja se hizo el canje: sin ese dato, comprobar "¿ya gastó la tarde?" obliga a
+    recalcular la franja a partir del reloj cada vez, y el resultado cambiaría si algún día se mueven
+    los horarios.
