@@ -451,8 +451,14 @@ end $$;
 reset role;
 
 -- El pendiente expira: libera su cupo al vuelo, sin cron (decisión 8).
+--
+-- Hay que retroceder AMBAS fechas, no solo `expira_at`. La 005 tiene el check
+-- `redemptions_expira_despues_de_crearse`, y un canje creado ahora que expiró hace un minuto es
+-- justamente lo que esa restricción existe para impedir. Se simula lo que pasa de verdad: el canje
+-- se creó hace diez minutos y venció hace cinco.
 update public.redemptions
-set expira_at = now() - interval '1 minute'
+set created_at = now() - interval '10 minutes',
+    expira_at  = now() - interval '5 minutes'
 where codigo = '100003';
 
 set local role authenticated;

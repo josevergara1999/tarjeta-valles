@@ -104,20 +104,27 @@ parámetro y no una regla tallada en el código:
   que sigue siendo la única fuente de verdad. Cambiar de modo es un `update` en `settings`, sin
   migración, sin tocar el cliente y sin desplegar.
 
-**PENDIENTE DE PRODUCTO — no lo resuelve esta decisión.** Triplicar los giros por pase choca
-de frente con dos cosas ya escritas y razonadas:
+**La cantidad de giros por pase quedó cerrada el 30-ago-2026.** José lo confirmó: *"el pase diario
+tiene 1 ruleta; 1 giro significa 3 giros a lo largo del día, mañana, tarde y noche"*. Es el caso de
+un día de la misma regla, así que **días × 3** vale para todos los pases:
 
-1. La tabla de precios de `contexto-producto.md` quedó desactualizada. Con tres giros diarios
-   el Pase 7 días sale a ~$376 por beneficio y el de 14 a ~$307, contra **$625 de la suscripción
-   mensual**. El pase largo deja de competir con la suscripción: la deja sin sentido.
-2. La entrada "Pase 14 días = 12 giros" de la tabla de menores decía que ese número era
-   intencional *precisamente* para evitar esa competencia. Con este cambio ese argumento cae.
+| Pase del Día | Pase 3 días | Pase 7 días | Pase 14 días |
+|---|---|---|---|
+| 3 giros | 9 giros | 21 giros | 42 giros |
 
-Puede ser correcto que el pase turístico sea generoso —el turista está tres días y quiere
+Las suscripciones no entran en esta multiplicación: sus 8 y 10 giros mensuales son una bolsa, y la
+franja solo les pone un techo de ritmo de 3 al día.
+
+**LO QUE SIGUE PENDIENTE ES EL PRECIO, NO LOS GIROS.** Con la tabla corregida, el Pase 7 días sale
+a ~$376 por beneficio y el de 14 a ~$307, contra **$625 de la suscripción mensual**: el pase largo
+deja de competir con la suscripción y la deja sin sentido. Solo la anual ($300) queda por debajo, y
+apenas.
+
+Puede ser correcto que el pase turístico sea generoso —el turista está pocos días y quiere
 exprimirlos, y la suscripción se defiende por otro lado, que es ser para residentes todo el año—
-pero **es una decisión de precio y de salud de la red que hay que tomar aparte**, y al tomarla
-hay que reescribir la tabla de precios y esa entrada. Mientras tanto, T4 solo implementa el
-techo por franja, que no depende de cuántos giros traiga cada producto.
+pero **es una decisión de precio y de salud de la red que hay que tomar aparte**. Los precios de
+`contexto-producto.md` quedaron **sin tocar** a la espera de esa decisión. Mientras tanto, T4 solo
+implementa el techo por franja, que no depende de cuántos giros traiga cada producto.
 
 ---
 
@@ -129,7 +136,7 @@ techo por franja, que no depende de cuántos giros traiga cada producto.
 | TTL de 5 min | Se lee de `settings.ttl_codigo_canje_minutos`. Ningún parámetro de negocio hardcodeado. |
 | Tabla `settings` | Agregarla al modelo de datos: `key`, `value`, `tipo`, `descripcion`. Los valores iniciales están en `seed-data.md`. |
 | Estado `anulado` | Anulación manual desde el panel admin (soporte: canje mal validado, reclamo del usuario). **Devuelve el giro** y no cuenta para progreso ni para cupos. Requiere `motivo` y `anulado_por`. |
-| Pase 14 días = 12 giros | **En revisión desde el 29-ago-2026.** El argumento original era: mantiene la curva de precio por giro descendente y evita que el pase largo compita con la suscripción mensual. La decisión 11 (tres giros por día) lo deja sin piso — ver el pendiente de producto anotado ahí. |
+| Pase 14 días = 12 giros | **Descartado el 30-ago-2026.** Son **42** (14 días × 3 franjas). El argumento original —mantener la curva de precio por giro descendente y que el pase largo no compitiera con la suscripción— se apoyaba en poner los giros por debajo de los días, y la decisión 11 lo dejó sin piso. La tabla de `contexto-producto.md` ya está corregida. Lo que queda abierto es el **precio**, no la cantidad de giros. |
 | Unicidad de `redemptions.codigo` | Índice único parcial: único mientras `estado = 'pendiente'`. Los códigos históricos pueden repetirse. |
 | Condición de consumo vacía | **La condición es obligatoria, siempre** (29-ago-2026). El spec ya lo pedía y la regla dura 4 también; esta tabla tenía tres beneficios con la casilla en blanco y eso era el error. Un beneficio que no impone nada lo dice: `Sin condiciones`. La columna es `NOT NULL` y rechaza la cadena vacía. |
 | Ubicación de archivos | Correcto: mover `spec-app-tarjeta.md`, `contexto-producto.md` y `seed-data.md` a `/docs`. `CLAUDE.md` va en la raíz. |

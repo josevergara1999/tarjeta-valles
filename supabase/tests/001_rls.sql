@@ -48,6 +48,14 @@ begin
   raise notice 'OK  · cada comercio nace con su hmac_secret';
 end $$;
 
+-- Cuántos parámetros hay en `settings` no se puede escribir a mano: cada migración agrega los suyos
+-- —la 008 sumó las franjas y la zona horaria— y un número fijo acá convierte esta prueba en algo que
+-- se rompe cada vez que el negocio gana un parámetro. Se guarda el total real ANTES de bajar a
+-- `authenticated` y se compara desde adentro: lo que se está comprobando es que RLS no le esconda
+-- ninguna fila al usuario, no cuántas filas existan hoy. Mismo criterio que el conteo de `merchants`
+-- de más abajo, acotado a los comercios de la prueba.
+select set_config('prueba.settings_total', (select count(*)::text from public.settings), true);
+
 -- ---------------------------------------------------------------------------
 -- Con el token de Fogón
 -- ---------------------------------------------------------------------------
@@ -134,8 +142,9 @@ begin
 
   -- Los parámetros se leen, pero no se tocan.
   select count(*) into n from public.settings;
-  if n <> 11 then
-    raise exception 'FALLA: settings devuelve % filas, deberían ser los 11 parámetros semilla', n;
+  if n <> current_setting('prueba.settings_total')::int then
+    raise exception 'FALLA: el usuario lee % de las % filas de settings; RLS le está escondiendo parámetros',
+      n, current_setting('prueba.settings_total');
   end if;
   update public.settings set value = '999' where key = 'ttl_codigo_canje_minutos';
   get diagnostics n = row_count;

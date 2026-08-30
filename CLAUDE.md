@@ -65,7 +65,10 @@ npm run preview    # previsualizar build
 
 - [ ] Hito 1 — Núcleo de canje **(en curso)** — 14 tareas, T0 a T13
 
-  _Base_
+  _Base_ — **las 115 comprobaciones de `supabase/tests/` pasan contra la base real (30-ago-2026).**
+  Se corren pegando el archivo en el SQL Editor: cada uno abre transacción y termina en `rollback`,
+  así que no dejan nada. El editor no muestra `raise notice`, solo los `raise exception`: si dice
+  `Success. No rows returned`, pasaron todas.
   - [x] T0 — Andamiaje: repo, Vite + React + Tailwind, PWA, estructura, cliente Supabase
         Publicado en https://github.com/josevergara1999/tarjeta-valles (público, rama `main`).
         _Pendiente y es DISEÑO, no se inventa: el manifiesto va con `icons: []`, y sin iconos de
@@ -102,16 +105,40 @@ npm run preview    # previsualizar build
           vencido pero sin marcar también bloquea. **T5 debe barrer los vencidos antes de insertar.**
         · Sin `order_id` ni `giftcard_id` en `entitlements`: esas tablas son de hitos posteriores y una
           columna uuid sin foránea es una referencia rota esperando turno.
-        · **Pendiente de producto:** cuántos giros trae cada pase no está definido en ninguna parte.
-          Solo están fijados suscripción (8/10, en `settings`) y pase 14 días = 12. Los `giros_totales`
-          de la semilla (pase_7 = 8, pase_3 = 4) son **relleno de prueba**, no decisión de producto.
+        · ~~Pendiente de producto: cuántos giros trae cada pase.~~ **Resuelto el 30-ago-2026: días × 3.**
+          Pase del Día 3, pase 3 días 9, pase 7 días 21, pase 14 días 42. Las suscripciones no se
+          multiplican: 8 y 10 al mes siguen igual, la franja solo les pone techo de ritmo. Los
+          `giros_totales` de la semilla (pase_7 = 8, pase_3 = 4) quedaron **desfasados** y hay que
+          corregirlos. Lo que sigue abierto es el **precio**, no la cantidad — ver decisión 11.
         · Los usuarios semilla se escriben directo en `auth.users`: **no pueden iniciar sesión**, no
           tienen credencial. Sirven para probar T4-T6. Los de verdad los crea el OTP en T7.
+        · **La semilla envejece y hubo que repararla (migración 011).** Sus fechas se escribieron como
+          `now() - interval '2 days'` evaluado al aplicar la 005, así que los canjes recientes del
+          turista salen solos de la ventana de cooldown y el escenario 4 desaparece sin que nadie
+          toque nada. `app.refrescar_semilla_demo()` la devuelve a su forma desplazando todas las
+          fechas por un mismo intervalo; `005_rls.sql` la llama dentro de su transacción para no
+          depender del calendario. Lo detectó la primera corrida de esas pruebas, dos días después
+          de sembrar.
 
   _El corazón, en el backend_
-  - [ ] T4 — `get_available_benefits`: las 5 condiciones, única fuente de verdad. `America/Santiago`,
-        ventanas que cruzan medianoche, cupos día y semana (lun-dom) contando validados + pendientes
-        vigentes, cooldown por comercio desde `validado_at`.
+  - [x] T4 — Migraciones 008 a 010: franjas del día + `get_available_benefits`. Las 5 condiciones,
+        única fuente de verdad. `America/Santiago`, ventanas que cruzan medianoche, cupos día y
+        semana (lun-dom) contando validados + pendientes vigentes, cooldown por comercio desde
+        `validado_at`. **Aplicadas y verificadas el 30-ago-2026**: las 38 comprobaciones de
+        `supabase/tests/008_franjas.sql` pasan contra la base real.
+        _Decisiones tomadas al implementar:_
+        · La **008** parte el día en tres franjas (`franja_dia`: manana/tarde/noche) con las horas de
+          corte en `settings`, encadenadas por su hora de inicio para que no queden huecos ni solapes.
+          El día operativo arranca a las 06:00: un canje a la 01:00 cuenta para el día anterior, igual
+          que las ventanas de los comercios. `redemptions` guarda `franja` y `dia_operativo` en vez de
+          recalcularlos, para que mover una franja no reescriba el pasado.
+        · `modo_ritmo_giros` en `settings` decide entre `franjas` (activo) y `libre`. Es una sola
+          bifurcación dentro de `get_available_benefits`, no dos lógicas: cambiar de modo es un
+          `update`, sin migración ni despliegue.
+        · La **010** corrigió los giros de la semilla a días × 3 (pase_7 = 21, pase_3 = 9).
+        · Las pruebas encontraron un error propio: simulaban un pendiente vencido moviendo solo
+          `expira_at` al pasado, y eso choca con `redemptions_expira_despues_de_crearse` de la 005.
+          Hay que retroceder también `created_at`. La restricción estaba bien; la prueba, mal.
   - [ ] T5 — `create_redemption`: revalida las 5 condiciones dentro de una transacción con lock,
         rechaza si el usuario ya tiene un pendiente, código de 6 dígitos + payload firmado con HMAC,
         TTL desde `settings`. Más `cancel_redemption`, que libera el giro al instante.

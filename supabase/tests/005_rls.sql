@@ -10,6 +10,13 @@
 
 begin;
 
+-- La semilla envejece: sus fechas se escribieron relativas al día en que se aplicó la 005, así que
+-- los canjes "recientes" del turista dejan de estar dentro de la ventana de cooldown con solo dejar
+-- pasar unos días. Se la devuelve a su forma antes de comprobar nada. Va dentro de la transacción,
+-- de modo que el rollback del final lo deshace: esta prueba no cambia la base, solo deja de depender
+-- del calendario. Ver la migración 011.
+select app.refrescar_semilla_demo();
+
 -- ---------------------------------------------------------------------------
 -- La semilla de usuarios es la que describe seed-data.md
 -- ---------------------------------------------------------------------------
@@ -58,7 +65,8 @@ begin
     raise exception 'FALLA: el cliente Nivel 1 tiene % canjes, deberían ser 34', n;
   end if;
 
-  -- Pase vencido: se quedó con un giro dentro, y no cuenta como disponible.
+  -- Pase vencido: se quedó con giros sin gastar dentro (9 comprados, 3 usados desde la 010) y
+  -- ninguno cuenta como disponible. Lo que se comprueba es el filtro por estado, no el número.
   select coalesce(sum(giros_totales - giros_usados), 0) into giros
   from public.entitlements
   where user_id = '5eed0002-0000-4000-a000-000000000005' and estado = 'activo';

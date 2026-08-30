@@ -105,14 +105,28 @@ Cuando se active la monetización B2B (fase posterior), los espacios pagados son
 
 ## Precios (referencia)
 
-| Producto | Giros | Precio |
-|---|---|---|
-| Bienvenida (QR) | 1 de prueba | Gratis |
-| Pase del Día | 1 | $2.990 |
-| Pase 3 días | 3 | $4.900 |
-| Pase 7 días | 7 | $7.900 |
-| Pase 14 días | 12 | $12.900 |
-| Suscripción mensual | 8/mes | $5.000/mes |
-| Suscripción anual | 10/mes | $3.000/mes |
+| Producto | Giros | Precio | Por beneficio |
+|---|---|---|---|
+| Bienvenida (QR) | 1 de prueba | Gratis | — |
+| Pase del Día | 3 | $2.990 | $997 |
+| Pase 3 días | 9 | $4.900 | $544 |
+| Pase 7 días | 21 | $7.900 | $376 |
+| Pase 14 días | 42 | $12.900 | $307 |
+| Suscripción mensual | 8/mes | $5.000/mes | $625 |
+| Suscripción anual | 10/mes | $3.000/mes | $300 |
 
 La curva es intencional: mientras más comprometido con el valle, más barato sale cada beneficio. El Pase del Día existe en parte como **ancla** para que el de 3 días se vea regalado.
+
+**La columna de giros se corrigió el 30-ago-2026** para que respete la decisión 11: un pase de N días trae N × 3 giros, porque el día se parte en tres franjas y cada franja da un giro. Confirmado por José: *"el pase diario tiene 1 ruleta; 1 giro significa 3 giros a lo largo del día, mañana, tarde y noche"*. Los números viejos —1, 3, 7 y 12— eran de antes de esa decisión y estaban un factor de tres por debajo.
+
+Las suscripciones **no** se multiplican: sus 8 y 10 giros son una bolsa mensual, y la franja es un techo de ritmo, no una fuente de giros. Un suscriptor gasta como máximo 3 al día y 1 por franja, pero sigue teniendo 8 al mes.
+
+> **PENDIENTE DE PRECIO — los precios de esta tabla NO se tocaron, solo los giros.**
+> Con la columna corregida, el Pase 14 sale a $307 por beneficio contra **$625 de la suscripción
+> mensual**: el pase largo la deja sin sentido, y el de 7 días ($376) también la pasa por encima.
+> La suscripción anual ($300) es lo único que se sostiene abajo del pase largo, y por muy poco.
+>
+> Puede ser una decisión correcta —el turista está pocos días y quiere exprimirlos, y la suscripción
+> se defiende por ser para residentes todo el año— pero es una **decisión de precio y de salud de la
+> red que hay que tomar aparte**. Mientras no se tome, esta tabla describe cuántos giros entrega cada
+> producto, no cuánto debería costar. Ver `decisiones-hito-1.md`, decisión 11.

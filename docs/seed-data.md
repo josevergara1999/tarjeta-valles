@@ -35,7 +35,24 @@ Casos que estos datos permiten probar:
 | Turista con pase | +56 9 2222 2222 | Pase 7 días activo, 3 giros usados, 2 canjes en cooldown |
 | Suscriptor | +56 9 3333 3333 | Suscripción mensual, 5 de 8 giros usados, 8 canjes históricos (cerca de Nivel 1) |
 | Nivel 1 | +56 9 4444 4444 | 34 canjes históricos, tarjeta Nivel 1 retirada, +2 giros/mes |
-| Pase expirado | +56 9 5555 5555 | Pase 3 días vencido con 1 giro sin usar — para probar expiración |
+| Pase expirado | +56 9 5555 5555 | Pase 3 días vencido con giros sin usar — para probar expiración |
+
+Los pases traen **días × 3 giros** (decisión 11): el de 7 días son 21 y el de 3 días son 9. La
+migración 005 los sembró con números provisorios y la **010** los corrigió.
+
+> **Esta semilla envejece.** Sus fechas se escribieron relativas al día en que se aplicó la 005, así
+> que los canjes "recientes" del turista salen solos de la ventana de cooldown con el paso de los
+> días y el escenario 4 desaparece. Para devolverla a esta forma:
+>
+> ```sql
+> select app.refrescar_semilla_demo();
+> ```
+>
+> Desplaza todas las fechas conservando la estructura relativa, y es idempotente. Las pruebas de
+> `005_rls.sql` la llaman solas dentro de su transacción. Ver la migración 011.
+
+Estos usuarios se escribieron directo en `auth.users` y **no pueden iniciar sesión**: no tienen
+credencial. Sirven para probar T4 a T6. Los de verdad los crea el OTP en T7.
 
 ## Cuentas de comercio
 
@@ -75,3 +92,22 @@ giros_suscripcion_mensual = 8
 giros_suscripcion_anual = 10
 comision_giftcard = 0.10
 ```
+
+La **migración 008** sumó seis parámetros más, los del ritmo del día (decisión 11):
+
+```
+zona_horaria = America/Santiago
+franja_manana_inicio = 06:00
+franja_tarde_inicio = 12:00
+franja_noche_inicio = 19:00
+modo_ritmo_giros = franjas
+giros_por_dia = 3
+```
+
+Las franjas se encadenan por su hora de inicio —la mañana termina donde empieza la tarde— para que
+no queden huecos ni solapes. `franja_manana_inicio` marca además el comienzo del **día operativo**:
+un canje a la 01:00 cuenta para el día anterior. `giros_por_dia` solo se lee cuando
+`modo_ritmo_giros = libre`; en modo `franjas` el techo lo dan las franjas.
+
+**No escribas un total fijo de parámetros en una prueba.** Eran 11 y hoy son 17; el conteo exacto de
+`settings` se rompe con cada migración que agregue uno. Ver `supabase/tests/001_rls.sql`.
