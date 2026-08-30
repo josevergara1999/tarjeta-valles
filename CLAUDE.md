@@ -71,9 +71,20 @@ npm run preview    # previsualizar build
   `Success. No rows returned`, pasaron todas.
   - [x] T0 — Andamiaje: repo, Vite + React + Tailwind, PWA, estructura, cliente Supabase
         Publicado en https://github.com/josevergara1999/tarjeta-valles (público, rama `main`).
-        _Pendiente y es DISEÑO, no se inventa: el manifiesto va con `icons: []`, y sin iconos de
-        192 y 512 px Android no ofrece instalar. La PWA no es instalable todavía. El favicon sigue
-        siendo el de la plantilla de Vite._
+        **La PWA ya es instalable (30-ago-2026).** El manifiesto lleva 192, 512 y `maskable`, más
+        `apple-touch-icon` en el `index.html` porque iOS ignora el manifiesto. Verificado en el
+        navegador sobre el build: los siete archivos responden 200 y sus dimensiones reales coinciden
+        con las declaradas.
+        · Los iconos los genera **`npm run iconos`** a partir de un único archivo, `public/favicon.svg`.
+          Configuración en `pwa-assets.config.js`. Para cambiar el icono se sobrescribe ese SVG y se
+          corre el comando: **no hay que tocar `vite.config.js` ni `index.html`**.
+        · El maskable rellena todo el lienzo con `#0b0b0b`. Si se deja el relleno transparente que
+          trae el preset por defecto, Android recorta el icono a círculo y se ve un cuadrado oscuro
+          flotando dentro de un aro claro.
+        · _El dibujo actual es un **marcador de posición** —un monograma sobre el fondo que ya estaba
+          decidido en el manifiesto— acordado con José como excepción para no dejar el bloqueo para
+          más adelante. **Es la excepción, no la regla:** todo lo demás que sea diseño se avisa y lo
+          hace José en Claude Design._
   - [x] T1 — Migración 001: `settings`, `users`, `merchants`, `merchant_users` + RLS.
         `users.id` referencia `auth.users`; `merchant_users.auth_user_id` también; `merchants` con
         `cooldown_dias` y `hmac_secret`. Seed de los parámetros de `seed-data.md`.

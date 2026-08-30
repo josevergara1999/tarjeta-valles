@@ -2,8 +2,13 @@
 <html lang="es-CL">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+    <!-- iOS ignora el manifiesto: si este link no está, Safari se inventa el icono con una captura
+         de la página al agregarla a la pantalla de inicio. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0b0b" />
     <title>Tarjeta Valles</title>
   </head>
   <body>
