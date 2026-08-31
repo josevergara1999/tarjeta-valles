@@ -174,6 +174,14 @@ npm run preview    # previsualizar build
         · La **012 va sola** porque Postgres no deja usar un valor de enum recién agregado en la misma
           transacción que lo agregó, y el CLI envuelve cada migración en una.
         · La 013 usa `create or replace` en las cuatro funciones, así que es reejecutable.
+        · **La 014 cerró permisos que la 013 dejó abiertos.** En Postgres una función nace con EXECUTE
+          para `PUBLIC`, así que revocar solo en las dos de `public` dejó `app.firmar_canje` —que es
+          SECURITY DEFINER y lee `merchant_secrets`— ejecutable por `anon` y `authenticated`. Quien
+          pudiera llamarla se fabricaba un QR firmado para cualquier comercio. No era alcanzable
+          porque PostgREST solo publica `public`, pero eso es una casualidad de configuración, no una
+          defensa. **Regla que queda: después de crear una función, comprobar `has_function_privilege`,
+          no confiar en el `revoke` que uno cree haber escrito.** Ojo con el ACL: una entrada que
+          empieza con `=X/` es PUBLIC, y revocar a `anon` no la toca.
   - [ ] T6 — `validate_redemption`: código existente, no expirado, no usado y del comercio autenticado.
         Marca validado e incrementa `giros_usados`.
 
