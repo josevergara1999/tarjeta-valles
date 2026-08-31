@@ -67,6 +67,22 @@ npm run preview    # previsualizar build
 
 - [ ] Hito 1 — Núcleo de canje **(en curso)** — 14 tareas, T0 a T13
 
+  _El Security Advisor de Supabase (panel → Advisors) está en **0 errores**. Las 5 advertencias que
+  quedan son conocidas y ninguna es un defecto:_
+  - _4 × "Signed-In Users Can Execute SECURITY DEFINER Function" sobre `create_redemption`,
+    `cancel_redemption`, `get_turn_state` y `get_available_benefits`. **Es el diseño**: son la única
+    puerta de escritura del canje, tienen que ser SECURITY DEFINER para contar cupos y tomar el lock,
+    y cada una comprueba `auth.uid()` adentro. No se "arregla"._
+  - _1 × "Leaked Password Protection Disabled" en Auth. **Sí conviene activarla** antes de T10: los
+    comercios entran con email y contraseña. Es un interruptor del panel, no código — decisión de José._
+  - _1 informativa: `merchant_secrets` con RLS y sin políticas. Es el estado deseado: sin políticas
+    nadie lee, y encima no tiene concesiones a ningún rol._
+
+  _Conviene volver a pasar el Advisor después de cada tarea que agregue funciones. Encontró en un
+  intento (`app.redemption_ocupa` sin `search_path`) algo que mi propia auditoría no vio, porque yo
+  había filtrado por SECURITY DEFINER y esa función no lo es. **La comprobación propia hereda los
+  puntos ciegos de quien la escribe.**_
+
   _Base_ — **las 147 comprobaciones de `supabase/tests/` pasan contra la base real (30-ago-2026).**
   Se corren pegando el archivo en el SQL Editor: cada uno abre transacción y termina en `rollback`,
   así que no dejan nada. El editor no muestra `raise notice`, solo los `raise exception`: si dice
