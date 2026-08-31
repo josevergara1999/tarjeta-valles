@@ -229,6 +229,13 @@ npm run preview    # previsualizar build
   _App del usuario_ (de T7 en adelante hay pantalla: avisar y detenerse hasta que José entregue diseño)
   - [ ] T7 — Registro por teléfono: OTP internacional, fallback email, rate limit, giro de bienvenida único.
   - [ ] T8 — **Ruleta.** Consume solo lo que devuelve T4. Beneficio y condición de consumo siempre juntos.
+        **PREGUNTA DE PRODUCTO ABIERTA, y hay que resolverla ANTES de dibujar: ¿"ruleta" es
+        literal o es solo el nombre?** Todo el backend está construido para que el usuario **elija**
+        entre las casillas disponibles, y el orden lo da la satisfacción de los clientes —nunca el
+        tamaño del beneficio—. Si el diseño la hace girar de verdad, el azar contradice el ranking y
+        hay que rehacer la regla. Una carta de opciones y una ruleta de azar son dos productos
+        distintos, y el spec dice "elige".
+
         **El backend ya entrega todo lo que la ruleta necesita (migración 018, 31-ago-2026).**
         `get_available_benefits()` devuelve **la red entera**, disponible y apagada, con tres columnas
         nuevas: `disponible`, `motivo` y `disponible_at`. Así se pueden dibujar los escenarios 3, 4 y 5
