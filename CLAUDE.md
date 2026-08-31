@@ -206,6 +206,20 @@ npm run preview    # previsualizar build
   _App del usuario_ (de T7 en adelante hay pantalla: avisar y detenerse hasta que José entregue diseño)
   - [ ] T7 — Registro por teléfono: OTP internacional, fallback email, rate limit, giro de bienvenida único.
   - [ ] T8 — **Ruleta.** Consume solo lo que devuelve T4. Beneficio y condición de consumo siempre juntos.
+        **HUECO CONOCIDO, detectado el 31-ago-2026 al repasar los escenarios de `seed-data.md`:**
+        `get_available_benefits()` devuelve **solo las casillas disponibles**, sin motivo. Pero los
+        escenarios 3, 4 y 5 piden que la casilla **se vea apagada con su razón** —"Agotado por hoy",
+        "Vuelve en 2 días", fuera de horario— y hoy esos comercios simplemente no vienen en la
+        respuesta: la ruleta no tiene con qué dibujarlos.
+        · Con el usuario no pasa, porque ahí el motivo sí viaja: `get_turn_state()` devuelve
+          `sin_giros`, `canje_pendiente`, `franja_gastada` o `techo_diario` (escenario 6, cubierto).
+          Lo que falta es el equivalente **por comercio**.
+        · Resolverlo es backend, no diseño: o `get_available_benefits` devuelve también los no
+          disponibles con un `motivo` y un `disponible_at`, o se agrega una función hermana. **Hay que
+          decidirlo ANTES de que José entregue el diseño de la ruleta**, porque cambia qué datos tiene
+          la pantalla y por lo tanto qué se puede dibujar.
+        · Ojo con no romper la regla: siga donde siga viviendo, el cálculo tiene que quedar en un solo
+          lugar del backend. Si el cliente deduce "esto está en cooldown" por su cuenta, es un error.
   - [ ] T9 — Canje activo: código grande, QR firmado, cuenta regresiva, botón de cancelar.
 
   _Panel del comercio_
