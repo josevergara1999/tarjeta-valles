@@ -83,7 +83,7 @@ npm run preview    # previsualizar build
   había filtrado por SECURITY DEFINER y esa función no lo es. **La comprobación propia hereda los
   puntos ciegos de quien la escribe.**_
 
-  _Base_ — **las 162 comprobaciones de `supabase/tests/` pasan contra la base real (31-ago-2026).**
+  _Base_ — **las 189 comprobaciones de `supabase/tests/` pasan contra la base real (31-ago-2026).**
   Se corren pegando el archivo en el SQL Editor: cada uno abre transacción y termina en `rollback`,
   así que no dejan nada. El editor no muestra `raise notice`, solo los `raise exception`: si dice
   `Success. No rows returned`, pasaron todas.
@@ -207,8 +207,24 @@ npm run preview    # previsualizar build
           defensa. **Regla que queda: después de crear una función, comprobar `has_function_privilege`,
           no confiar en el `revoke` que uno cree haber escrito.** Ojo con el ACL: una entrada que
           empieza con `=X/` es PUBLIC, y revocar a `anon` no la toca.
-  - [ ] T6 — `validate_redemption`: código existente, no expirado, no usado y del comercio autenticado.
-        Marca validado e incrementa `giros_usados`.
+  - [x] T6 — Migración 019: `validate_redemption`. Código existente, no expirado, no usado y del
+        comercio autenticado. Marca validado, **gasta el giro** e **inicia el pase**.
+        **Aplicada y verificada el 31-ago-2026**: `supabase/tests/019_validacion.sql` cubre el
+        escenario 1 de punta a punta (reservar → validar) y los 8 y 9 completos.
+        _Decisiones tomadas al implementar:_
+        · **La duración de cada pase no existía en el código.** El spec pedía `fecha_activacion + N
+          días` pero el N vivía solo en el nombre del producto. Ahora está en `settings`, con la clave
+          `dias_` || tipo. Si falta el parámetro la función **se cae** en vez de activar un pase sin
+          vencimiento: un pase eterno no lo nota nadie hasta ver la factura de los comercios.
+        · `validado_por` guarda el `merchant_users.id`, no el `auth.users.id`: interesa qué cuenta del
+          local validó, que es lo que permite el reporte por operador.
+        · `otro_comercio` se distingue de `canje_inexistente` a propósito. Confirma que el código
+          existe, sí, pero quien pregunta es un comercio con sesión iniciada y la diferencia le sirve
+          al cajero: "no es de acá" manda al cliente al local correcto. El mensaje no dice a cuál.
+        · **Un `raise` deshace todo lo que la función hizo antes.** La primera versión marcaba el canje
+          vencido como `expirado` y después rechazaba: código muerto, el update se iba con la
+          excepción. No hace falta — un pendiente vencido no ocupa cupo por fecha, y el barrido de T5
+          lo etiqueta en la próxima reserva.
 
   _App del usuario_ (de T7 en adelante hay pantalla: avisar y detenerse hasta que José entregue diseño)
   - [ ] T7 — Registro por teléfono: OTP internacional, fallback email, rate limit, giro de bienvenida único.
