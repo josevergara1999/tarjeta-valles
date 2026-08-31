@@ -83,7 +83,7 @@ npm run preview    # previsualizar build
   había filtrado por SECURITY DEFINER y esa función no lo es. **La comprobación propia hereda los
   puntos ciegos de quien la escribe.**_
 
-  _Base_ — **las 147 comprobaciones de `supabase/tests/` pasan contra la base real (30-ago-2026).**
+  _Base_ — **las 162 comprobaciones de `supabase/tests/` pasan contra la base real (31-ago-2026).**
   Se corren pegando el archivo en el SQL Editor: cada uno abre transacción y termina en `rollback`,
   así que no dejan nada. El editor no muestra `raise notice`, solo los `raise exception`: si dice
   `Success. No rows returned`, pasaron todas.
@@ -192,6 +192,13 @@ npm run preview    # previsualizar build
         · La **012 va sola** porque Postgres no deja usar un valor de enum recién agregado en la misma
           transacción que lo agregó, y el CLI envuelve cada migración en una.
         · La 013 usa `create or replace` en las cuatro funciones, así que es reejecutable.
+        · **La 018 cambió el contrato de T4 y obligó a tocar esta función.** `create_redemption`
+          revalidaba preguntando `exists (... from get_available_benefits() where benefit_id = ...)`;
+          como ahora esa lista incluye las casillas apagadas, sin un `and g.disponible` habría dejado
+          reservar sobre un cupo agotado. Es el precio de delegar la regla en otra función: cuando la
+          otra cambia lo que significa "estar en la lista", esta se rompe en silencio. Sigue valiendo
+          la pena —una sola fuente de verdad— pero **hay que revisar a los consumidores cada vez que
+          el contrato de T4 se mueva**.
         · **La 014 cerró permisos que la 013 dejó abiertos.** En Postgres una función nace con EXECUTE
           para `PUBLIC`, así que revocar solo en las dos de `public` dejó `app.firmar_canje` —que es
           SECURITY DEFINER y lee `merchant_secrets`— ejecutable por `anon` y `authenticated`. Quien
@@ -206,20 +213,22 @@ npm run preview    # previsualizar build
   _App del usuario_ (de T7 en adelante hay pantalla: avisar y detenerse hasta que José entregue diseño)
   - [ ] T7 — Registro por teléfono: OTP internacional, fallback email, rate limit, giro de bienvenida único.
   - [ ] T8 — **Ruleta.** Consume solo lo que devuelve T4. Beneficio y condición de consumo siempre juntos.
-        **HUECO CONOCIDO, detectado el 31-ago-2026 al repasar los escenarios de `seed-data.md`:**
-        `get_available_benefits()` devuelve **solo las casillas disponibles**, sin motivo. Pero los
-        escenarios 3, 4 y 5 piden que la casilla **se vea apagada con su razón** —"Agotado por hoy",
-        "Vuelve en 2 días", fuera de horario— y hoy esos comercios simplemente no vienen en la
-        respuesta: la ruleta no tiene con qué dibujarlos.
-        · Con el usuario no pasa, porque ahí el motivo sí viaja: `get_turn_state()` devuelve
-          `sin_giros`, `canje_pendiente`, `franja_gastada` o `techo_diario` (escenario 6, cubierto).
-          Lo que falta es el equivalente **por comercio**.
-        · Resolverlo es backend, no diseño: o `get_available_benefits` devuelve también los no
-          disponibles con un `motivo` y un `disponible_at`, o se agrega una función hermana. **Hay que
-          decidirlo ANTES de que José entregue el diseño de la ruleta**, porque cambia qué datos tiene
-          la pantalla y por lo tanto qué se puede dibujar.
-        · Ojo con no romper la regla: siga donde siga viviendo, el cálculo tiene que quedar en un solo
-          lugar del backend. Si el cliente deduce "esto está en cooldown" por su cuenta, es un error.
+        **El backend ya entrega todo lo que la ruleta necesita (migración 018, 31-ago-2026).**
+        `get_available_benefits()` devuelve **la red entera**, disponible y apagada, con tres columnas
+        nuevas: `disponible`, `motivo` y `disponible_at`. Así se pueden dibujar los escenarios 3, 4 y 5
+        de `seed-data.md` —"Agotado por hoy", "Vuelve en 2 días", fuera de horario— que antes eran
+        imposibles porque esos comercios ni siquiera llegaban a la pantalla.
+        · `motivo` es la CAUSA (`cooldown`, `cupo_dia_agotado`, `cupo_semana_agotado`, `fuera_de_dia`,
+          `fuera_de_horario`), no el texto: la redacción la pone el diseño. `disponible_at` dice cuándo
+          vuelve, para que la pantalla escriba "2 días" **sin restar fechas por su cuenta**.
+        · Cuando hay varios bloqueos gana **el que libera último**. Si un local está cerrado ahora y
+          además en cooldown, decir "abre a las 19:00" sería mentir.
+        · **`disponible` habla solo del comercio.** Que el usuario pueda girar lo sigue diciendo
+          `get_turn_state()`. La pantalla combina las dos: casilla tocable = turno disponible Y casilla
+          disponible. Eso hizo posible el escenario 6 — antes, un usuario sin giros recibía una lista
+          vacía y no se podía ni dibujar la ruleta.
+        · Un comercio o beneficio **inactivo no se devuelve**: apagado ≠ ausente. Un local que se dio
+          de baja no es parte de la red, no es una casilla gris.
   - [ ] T9 — Canje activo: código grande, QR firmado, cuenta regresiva, botón de cancelar.
 
   _Panel del comercio_

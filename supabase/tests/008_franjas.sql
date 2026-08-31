@@ -154,7 +154,7 @@ begin
   end if;
 
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 1 then
     raise exception 'FALLA: el beneficio de prueba debería estar disponible';
   end if;
@@ -200,10 +200,24 @@ begin
     raise exception 'FALLA: la próxima franja debería estar en el futuro';
   end if;
 
-  -- Y la ruleta se cierra ENTERA, no solo la casilla de ese local.
+  -- La ruleta SE SIGUE VIENDO: quien cierra el turno es get_turn_state, no las casillas.
+  -- Desde la 018 `get_available_benefits` habla solo del comercio —horario, cupo, cooldown— y la
+  -- pantalla combina las dos cosas. Es lo que permite el escenario 6 de seed-data.md: el usuario que
+  -- no puede girar igual ve la red, en vez de una pantalla vacía sin explicación.
   select count(*) into n from public.get_available_benefits();
-  if n <> 0 then
-    raise exception 'FALLA: con la franja gastada no debería haber ninguna casilla, hay %', n;
+  if n = 0 then
+    raise exception 'FALLA: con la franja gastada la ruleta quedó vacía; debería verse igual';
+  end if;
+
+  -- Y la casilla del local donde acaba de canjear se sigue VIENDO, apagada por cooldown. Antes de la
+  -- 018 desaparecía y la ruleta no podía explicarle al turista por qué ese local ya no está.
+  select count(*) into n from public.get_available_benefits()
+  where benefit_id = '7e572222-0000-4000-a000-000000000001'
+    and not disponible
+    and motivo = 'cooldown'
+    and disponible_at > now();
+  if n <> 1 then
+    raise exception 'FALLA: la casilla del local recién canjeado debería verse apagada por cooldown';
   end if;
 end $$;
 
@@ -277,11 +291,12 @@ set local request.jwt.claims =
 do $$
 declare n int;
 begin
-  -- Se mira solo el beneficio de prueba: la franja gastada ya vació la ruleta, así que esta
-  -- comprobación se hace más abajo, con el canje movido en el tiempo.
+  -- La franja sigue gastada, pero eso ya no vacía la ruleta (018): lo dice get_turn_state. Acá se
+  -- comprueba que la red se siga viendo; el efecto del cooldown sobre esta casilla se mide más abajo,
+  -- con el canje movido en el tiempo.
   select count(*) into n from public.get_available_benefits();
-  if n <> 0 then
-    raise exception 'FALLA: la franja sigue gastada, no debería haber casillas';
+  if n = 0 then
+    raise exception 'FALLA: la ruleta quedó vacía; con la franja gastada igual debe verse';
   end if;
 end $$;
 
@@ -307,7 +322,7 @@ begin
 
   -- Pero el local sigue apagado: 1 día de 3 de cooldown.
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 0 then
     raise exception 'FALLA: el local debería estar en cooldown (1 día de 3)';
   end if;
@@ -328,7 +343,7 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 1 then
     raise exception 'FALLA: pasados 4 días de cooldown el local debería volver';
   end if;
@@ -352,7 +367,7 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 0 then
     raise exception 'FALLA: el beneficio no opera hoy, no debería aparecer';
   end if;
@@ -378,7 +393,7 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 1 then
     raise exception 'FALLA: la hora actual está dentro de la ventana, debería aparecer';
   end if;
@@ -400,7 +415,7 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 0 then
     raise exception 'FALLA: la hora actual está fuera de la ventana nocturna, no debería aparecer';
   end if;
@@ -453,7 +468,7 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 0 then
     raise exception 'FALLA: cupo del día agotado (1 validado + 1 pendiente vigente), no debería aparecer';
   end if;
@@ -480,13 +495,13 @@ do $$
 declare n int; cupos int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 1 then
     raise exception 'FALLA: el pendiente vencido libera su cupo, el beneficio debería volver';
   end if;
 
   select cupos_restantes_dia into cupos from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if cupos <> 1 then
     raise exception 'FALLA: debería quedar 1 cupo de 2, quedan %', cupos;
   end if;
@@ -553,9 +568,11 @@ begin
     raise exception 'FALLA: pase agotado debería dar sin_giros, dio %', st.motivo;
   end if;
 
+  -- ESCENARIO 6 de seed-data.md, literal: "usuario con 0 giros disponibles VE la ruleta pero no
+  -- puede reservar". Antes de la 018 esta función devolvía vacío y la pantalla no tenía qué dibujar.
   select count(*) into n from public.get_available_benefits();
-  if n <> 0 then
-    raise exception 'FALLA: sin giros no debería haber ninguna casilla, hay %', n;
+  if n = 0 then
+    raise exception 'FALLA: sin giros la ruleta quedó vacía; el escenario 6 pide que se vea';
   end if;
 end $$;
 
@@ -579,7 +596,7 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.get_available_benefits()
-  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+  where disponible and benefit_id = '7e572222-0000-4000-a000-000000000001';
   if n <> 0 then
     raise exception 'FALLA: un comercio apagado no puede aparecer en la ruleta';
   end if;
@@ -601,10 +618,176 @@ set local request.jwt.claims =
 do $$
 declare n int;
 begin
+  -- SIN acotar a `disponible`, y a propósito: la regla dura 4 vale para toda casilla que se dibuje,
+  -- también para las apagadas. Una casilla gris que dice "Schop de cortesía" sin "con la segunda
+  -- ronda" es igual de engañosa que una encendida.
   select count(*) into n from public.get_available_benefits()
   where condicion_consumo is null or length(btrim(condicion_consumo)) = 0;
   if n <> 0 then
     raise exception 'FALLA: % casillas vienen sin condición de consumo', n;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 9. Las casillas apagadas traen su motivo y cuándo vuelven (migración 018)
+--
+-- Es lo que permite los escenarios 3, 4 y 5 de seed-data.md: la casilla se ve, gris, con su razón.
+-- Sin esto la ruleta no puede dibujar "Vuelve en 2 días" porque el comercio ni siquiera llegaba.
+-- ---------------------------------------------------------------------------
+
+reset role;
+
+-- Cupo del día agotado, con canjes de OTRO usuario para no tocar la franja del nuestro.
+insert into auth.users (id, instance_id, aud, role, phone, phone_confirmed_at, created_at, updated_at)
+values ('7e570000-0000-4000-a000-000000000009', '00000000-0000-0000-0000-000000000000',
+        'authenticated', 'authenticated', '+56900000009', now(), now(), now());
+insert into public.users (id, telefono, nombre)
+values ('7e570000-0000-4000-a000-000000000009', '+56900000009', 'Agotador de cupo');
+insert into public.entitlements (id, user_id, tipo, giros_totales, giros_usados, estado, fecha_activacion)
+values ('7e573333-0000-4000-a000-000000000009', '7e570000-0000-4000-a000-000000000009',
+        'pase_3', 9, 0, 'activo', now());
+
+update public.benefit_rules
+set cupos_dia = 1, cupos_semana = 20, dias_semana = '{0,1,2,3,4,5,6}',
+    hora_inicio = null, hora_fin = null
+where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+delete from public.redemptions where user_id = '7e570000-0000-4000-a000-000000000001';
+
+insert into public.redemptions
+  (user_id, entitlement_id, benefit_id, merchant_id, codigo, estado,
+   created_at, expira_at, validado_at, franja, dia_operativo)
+values ('7e570000-0000-4000-a000-000000000009', '7e573333-0000-4000-a000-000000000009',
+        '7e572222-0000-4000-a000-000000000001', '7e571111-0000-4000-a000-000000000001',
+        '990001', 'validado',
+        now() - interval '1 hour', now() - interval '1 hour' + interval '5 minutes',
+        now() - interval '1 hour' + interval '1 minute',
+        app.franja_en(now()), app.dia_operativo(now()));
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"7e570000-0000-4000-a000-000000000001","role":"authenticated"}';
+
+do $$
+declare r record;
+begin
+  select * into r from public.get_available_benefits()
+  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+  if r.benefit_id is null then
+    raise exception 'FALLA: la casilla sin cupo desapareció; debería venir apagada';
+  end if;
+
+  if r.disponible then
+    raise exception 'FALLA: el cupo del día está agotado y la casilla dice disponible';
+  end if;
+
+  if r.motivo <> 'cupo_dia_agotado' then
+    raise exception 'FALLA: el motivo es %, debería ser cupo_dia_agotado', r.motivo;
+  end if;
+
+  -- Vuelve cuando arranca el día operativo siguiente, no a medianoche.
+  if r.disponible_at is null or r.disponible_at <= now() then
+    raise exception 'FALLA: cupo agotado sin disponible_at futuro (%)', r.disponible_at;
+  end if;
+
+  if r.disponible_at::date <> (app.dia_operativo(now()) + 1) then
+    raise exception 'FALLA: debería liberarse el día operativo siguiente, dice %', r.disponible_at;
+  end if;
+
+  -- Regla dura 4: apagada o no, la condición de consumo viaja igual.
+  if r.condicion_consumo is null or length(btrim(r.condicion_consumo)) = 0 then
+    raise exception 'FALLA: la casilla apagada vino sin condición de consumo';
+  end if;
+end $$;
+
+-- Cooldown: gana sobre el cupo porque libera MÁS TARDE. Es el escenario 4.
+reset role;
+
+update public.benefit_rules set cupos_dia = 20
+where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+insert into public.redemptions
+  (user_id, entitlement_id, benefit_id, merchant_id, codigo, estado,
+   created_at, expira_at, validado_at, franja, dia_operativo)
+values ('7e570000-0000-4000-a000-000000000001', '7e573333-0000-4000-a000-000000000001',
+        '7e572222-0000-4000-a000-000000000001', '7e571111-0000-4000-a000-000000000001',
+        '990002', 'validado',
+        now() - interval '1 day', now() - interval '1 day' + interval '5 minutes',
+        now() - interval '1 day' + interval '1 minute',
+        app.franja_en(now() - interval '1 day'), app.dia_operativo(now() - interval '1 day'));
+
+set local role authenticated;
+
+do $$
+declare r record; v_esperado timestamptz;
+begin
+  set local request.jwt.claims =
+    '{"sub":"7e570000-0000-4000-a000-000000000001","role":"authenticated"}';
+
+  select * into r from public.get_available_benefits()
+  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+  if r.disponible then
+    raise exception 'FALLA: canjeó ayer ahí, debería estar en cooldown';
+  end if;
+
+  if r.motivo <> 'cooldown' then
+    raise exception 'FALLA: el motivo es %, debería ser cooldown', r.motivo;
+  end if;
+
+  -- El cooldown del local son 3 días desde la validación: vuelve en ~2. Ese número es el que la
+  -- pantalla necesita para escribir "Vuelve en 2 días" sin restar fechas por su cuenta.
+  select validado_at + interval '3 days' into v_esperado
+  from public.redemptions where codigo = '990002';
+
+  if abs(extract(epoch from (r.disponible_at - v_esperado))) > 60 then
+    raise exception 'FALLA: disponible_at es % y debería ser % (validado_at + cooldown)',
+      r.disponible_at, v_esperado;
+  end if;
+end $$;
+
+-- Fuera de día: el beneficio solo abre un día que no es hoy.
+reset role;
+
+delete from public.redemptions where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+update public.benefit_rules
+set dias_semana = array[((extract(dow from app.dia_operativo(now()))::int + 3) % 7)::smallint],
+    hora_inicio = null, hora_fin = null
+where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+set local role authenticated;
+
+do $$
+declare r record;
+begin
+  set local request.jwt.claims =
+    '{"sub":"7e570000-0000-4000-a000-000000000001","role":"authenticated"}';
+
+  select * into r from public.get_available_benefits()
+  where benefit_id = '7e572222-0000-4000-a000-000000000001';
+
+  if r.disponible then
+    raise exception 'FALLA: hoy no es uno de sus días y dice disponible';
+  end if;
+
+  if r.motivo <> 'fuera_de_dia' then
+    raise exception 'FALLA: el motivo es %, debería ser fuera_de_dia', r.motivo;
+  end if;
+
+  if r.disponible_at is null or r.disponible_at <= now() then
+    raise exception 'FALLA: fuera_de_dia sin próxima apertura futura (%)', r.disponible_at;
+  end if;
+
+  -- Abre dentro de la semana: si diera más lejos, `proxima_apertura` no está encontrando el día.
+  if r.disponible_at > now() + interval '7 days' then
+    raise exception 'FALLA: la próxima apertura quedó a más de una semana (%)', r.disponible_at;
+  end if;
+
+  if extract(dow from app.dia_operativo(r.disponible_at))::int
+     <> ((extract(dow from app.dia_operativo(now()))::int + 3) % 7) then
+    raise exception 'FALLA: la próxima apertura no cae en el día que el beneficio abre';
   end if;
 end $$;
 
