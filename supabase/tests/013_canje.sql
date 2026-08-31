@@ -12,6 +12,17 @@
 
 begin;
 
+-- Las pruebas calculan sus valores esperados con las funciones internas de `app` (`franja_en`,
+-- `dia_operativo`, `setting_int`...), y desde la migración 015 ese esquema está cerrado a los roles de
+-- la API. Se conceden acá los permisos, DENTRO de la transacción: el `rollback` del final los deshace,
+-- así que la base vuelve a quedar cerrada y esto no relaja nada fuera de la prueba.
+--
+-- No debilita lo que se está comprobando: `app.*` se usa para saber qué franja es o qué día operativo
+-- corre, nunca para probar control de acceso. Lo que sí prueba accesos —RLS, quién puede llamar a
+-- create_redemption— no toca `app` en ningún momento.
+grant usage on schema app to authenticated;
+grant execute on all functions in schema app to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Datos de la prueba
 --
